@@ -23,8 +23,8 @@ void	test_read(char *str)
 
 void	test_strcmp(char *s1, char *s2)
 {
-	int my;
-	int correct;
+	int	my;
+	int	correct;
 
 	my = ft_strcmp(s1, s2);
 	correct = strcmp(s1, s2);
