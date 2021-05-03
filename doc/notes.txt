@@ -1,0 +1,5 @@
+text db "Hello, World!",10
+
+text	variable
+db		define bytes
+10		newline
