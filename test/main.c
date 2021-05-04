@@ -1,4 +1,5 @@
 #include "libasm.h"
+#include <errno.h>
 
 void	test_read(char *str)
 {
@@ -83,11 +84,13 @@ void	test_write(char *str)
 	char	buf[BUFFER_SIZE];
 	int		ret;
 
+	errno = 999999;
 	bzero(buf, BUFFER_SIZE);
 	if (pipe(ft_write_pipe) < 0)
 		exit(EXIT_FAILURE);
 	fcntl(ft_write_pipe[0], F_SETFL, O_NONBLOCK);
-	write(ft_write_pipe[1], str, strlen(str));
+	ft_write(ft_write_pipe[1], str, strlen(str));
+	// printf("errno %i\n", errno);
 	ret = read(ft_write_pipe[0], buf, BUFFER_SIZE);
 	buf[ret] = '\0';
 	if (!strcmp(buf, str))

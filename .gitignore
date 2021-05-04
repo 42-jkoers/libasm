@@ -1,1 +1,4 @@
 *libasm.pdf
+*.o
+*.a
+testor
