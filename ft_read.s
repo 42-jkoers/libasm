@@ -1,6 +1,6 @@
 section .text
 	global _ft_read
-	; extern ___error
+	extern ___error
 
 ; ssize_t	 ft_read(int fd, void *buf, size_t n);
 ; 			_ft_read(rdi, rsi, rdx)
@@ -12,8 +12,11 @@ _ft_read:
 	ret						; return rax
 
 exit_error:
-	; mov	r8, rax			; r8 = rax
-	; call ___error			; retrieve address to errno
-	; mov	[rax], r8		; &rax = r8
+							; rax = some error code
+ 	mov r8, rax				; save errno
+	push r8
+	call ___error			; rax = pointer to errno
+	mov	[rax], r8			; *rax = r8
 	mov rax, -1				; rax = -1
+	pop r8
 	ret						; return rax

@@ -1,25 +1,53 @@
 #include "libasm.h"
 #include <errno.h>
 
-void	test_read(char *str)
+typedef struct s_readp
 {
-	int		ft_read_pipe[2];
-	char	buf[BUFFER_SIZE];
-	int		ret;
+	int errno_value;
+	ssize_t	ret;
+}		t_readp;
+
+t_readp read_p(char *buf, char *str, ssize_t (*reader)(int, void *, size_t))
+{
+	int		fds[2];
+	ssize_t	ret;
+	t_readp	readp;
 
 	bzero(buf, BUFFER_SIZE);
-	if (pipe(ft_read_pipe) < 0)
+	if (pipe(fds) < 0)
 		exit(EXIT_FAILURE);
-	fcntl(ft_read_pipe[0], F_SETFL, O_NONBLOCK);
-	write(ft_read_pipe[1], str, strlen(str));
-	ret = ft_read(ft_read_pipe[0], buf, BUFFER_SIZE);
-	buf[ret] = '\0';
-	if (!strcmp(buf, str))
-		printf(OK);
-	else
+	fcntl(fds[0], F_SETFL, O_NONBLOCK);
+	write(fds[1], str, strlen(str));
+	errno = 0;
+	readp.ret = reader(fds[0], buf, BUFFER_SIZE);
+	readp.errno_value = errno;
+	close(fds[1]);
+	close(fds[0]);
+	return (readp);
+}
+
+void	test_read(char *str)
+{
+	t_readp	my;
+	char	buf_my[BUFFER_SIZE];
+	t_readp	correct;
+	char	buf_correct[BUFFER_SIZE];
+
+	my = read_p(buf_my, str, &ft_read);
+	correct = read_p(buf_correct, str, &read);
+	if (my.errno_value != correct.errno_value || my.ret != correct.ret)
+	{
 		printf(KO);
-	close(ft_read_pipe[1]);
-	close(ft_read_pipe[0]);
+		printf("Expected: errno: %i return: %li\n", correct.errno_value, correct.ret);
+		printf("Got:      errno: %i return: %li\n", my.errno_value, my.ret);
+		return ;
+	}
+	if (memcmp(buf_my, buf_correct, strlen(str)))
+	{
+		printf(KO);
+		return ;
+	}
+	printf(OK);
 }
 
 void	test_strcmp(char *s1, char *s2)
@@ -78,29 +106,55 @@ void	test_strlen(char *str)
 		printf("Expected: %i, got %i\n", correct, my);
 }
 
-void	test_write(char *str)
+typedef struct s_writep
 {
-	int		ft_write_pipe[2];
-	char	buf[BUFFER_SIZE];
-	int		ret;
+	int errno_value;
+	ssize_t	ret;
+}		t_writep;
 
-	errno = 999999;
+
+t_writep write_p(char *buf, char *str, ssize_t (*writer)(int, const void *, size_t))
+{
+	int		fds[2];
+	ssize_t	ret;
+	t_writep	writep;
+
 	bzero(buf, BUFFER_SIZE);
-	if (pipe(ft_write_pipe) < 0)
+	if (pipe(fds) < 0)
 		exit(EXIT_FAILURE);
-	fcntl(ft_write_pipe[0], F_SETFL, O_NONBLOCK);
-	ft_write(ft_write_pipe[1], str, strlen(str));
-	// printf("errno %i\n", errno);
-	ret = read(ft_write_pipe[0], buf, BUFFER_SIZE);
-	buf[ret] = '\0';
-	if (!strcmp(buf, str))
-		printf(OK);
-	else
-		printf(KO);
-	close(ft_write_pipe[1]);
-	close(ft_write_pipe[0]);
+	fcntl(fds[0], F_SETFL, O_NONBLOCK);
+	errno = 0;
+	writep.ret = writer(fds[1], buf, BUFFER_SIZE);
+	writep.errno_value = errno;
+	read(fds[0], buf, BUFFER_SIZE);
+	close(fds[1]);
+	close(fds[0]);
+	return (writep);
 }
 
+void	test_write(char *str)
+{
+	t_writep	my;
+	char		buf_my[BUFFER_SIZE];
+	t_writep	correct;
+	char		buf_correct[BUFFER_SIZE];
+
+	my = write_p(buf_my, str, &ft_write);
+	correct = write_p(buf_correct, str, &write);
+	if (my.errno_value != correct.errno_value || my.ret != correct.ret)
+	{
+		printf(KO);
+		printf("Expected: errno: %i return: %li\n", correct.errno_value, correct.ret);
+		printf("Got:      errno: %i return: %li\n", my.errno_value, my.ret);
+		return ;
+	}
+	if (memcmp(buf_my, buf_correct, strlen(str)))
+	{
+		printf(KO);
+		return ;
+	}
+	printf(OK);
+}
 int		main(void)
 {
 	printf("ft_read\n");
